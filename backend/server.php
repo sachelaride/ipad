@@ -23,10 +23,14 @@ $build = null;
 
 if (preg_match('/model\/([a-zA-Z0-9,]+)/', $userAgent, $mMatches)) {
     $model = $mMatches[1];
+} elseif (!empty($_GET['model'])) {
+    $model = $_GET['model'];
 }
 
 if (preg_match('/build\/([a-zA-Z0-9]+)/', $userAgent, $bMatches)) {
     $build = $bMatches[1];
+} elseif (!empty($_GET['build'])) {
+    $build = $_GET['build'];
 }
 
 $filePath = resolve_plist($baseDir, $model, $build);

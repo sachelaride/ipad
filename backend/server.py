@@ -33,18 +33,31 @@ class Handler(BaseHTTPRequestHandler):
         b = re.search(r'build/([a-zA-Z0-9]+)', user_agent)
         model_str = m.group(1) if m else None
         build_str = b.group(1) if b else None
-        print(f"[DEBUG] Regex extraiu - Model: {model_str}, Build: {build_str}")
+
+        # Fallback: se não estiver no User-Agent, aceita via query string (?model=...&build=...)
+        if not model_str and 'model' in qs:
+            model_str = qs['model'][0]
+        if not build_str and 'build' in qs:
+            build_str = qs['build'][0]
+
+        print(f"[DEBUG] Identificado - Model: {model_str}, Build: {build_str}")
         
         path = resolve_plist(model_str, build_str)
         print(f"[DEBUG] Caminho resolvido (plist): {path}")
         
         if path:
             self.send_response(200)
-            self.send_header('Content-Type', 'application/x-apple-plist')
+            self.send_header('Content-Description', 'File Transfer')
+            self.send_header('Content-Encoding', 'identity')
+            self.send_header('Content-Type', 'application/xml')
+            self.send_header('Content-Disposition', 'attachment; filename="patched.plist"')
             self.send_header('Content-Length', str(os.path.getsize(path)))
+            self.send_header('Cache-Control', 'must-revalidate')
+            self.send_header('Pragma', 'public')
             self.end_headers()
-            with open(path, 'rb') as f: self.wfile.write(f.read())
-            print("[DEBUG] Resposta 200 OK enviada (XML)")
+            with open(path, 'rb') as f:
+                self.wfile.write(f.read())
+            print(f"[DEBUG] Resposta 200 OK enviada (XML, {os.path.getsize(path)} bytes)")
             return
             
         print("[DEBUG] Falha ao encontrar caminho ou resolver os dados, retornando 403 Forbidden")
