@@ -13,7 +13,7 @@ from pymobiledevice3.lockdown import create_using_usbmux
 from exploits import get_exploit
 from exploits.common import parse_version
 from exploits.itunesstored.itunesstored import (
-    DEFAULT_ATTEMPTS, DEFAULT_BACKEND_URL, ItunesstoredExploit
+    DEFAULT_ATTEMPTS, DEFAULT_BACKEND_URL, DEFAULT_PAYLOAD_TIMEOUT, ItunesstoredExploit
 )
 
 
@@ -22,6 +22,7 @@ def load_settings():
     return {
         'backend_url': settings.value('backend_url', DEFAULT_BACKEND_URL, str),
         'attempts': settings.value('attempts', DEFAULT_ATTEMPTS, int),
+        'timeout': settings.value('timeout', DEFAULT_PAYLOAD_TIMEOUT, int),
     }
 
 
@@ -29,6 +30,7 @@ def save_settings(settings):
     out = QSettings()
     out.setValue('backend_url', settings['backend_url'])
     out.setValue('attempts', settings['attempts'])
+    out.setValue('timeout', settings['timeout'])
 
 
 class SettingsDialog(QDialog):
@@ -44,11 +46,18 @@ class SettingsDialog(QDialog):
         self.attempts.setRange(1, 99)
         self.attempts.setValue(settings['attempts'])
 
+        self.timeout = QSpinBox()
+        self.timeout.setRange(10, 600)
+        self.timeout.setSingleStep(15)
+        self.timeout.setSuffix(' s')
+        self.timeout.setValue(settings.get('timeout', DEFAULT_PAYLOAD_TIMEOUT))
+
         layout = QFormLayout(self)
         layout.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         layout.addRow(QLabel('<b>itunesstored</b>'))
         layout.addRow('Backend URL:', self.backend_url)
         layout.addRow('Attempts:', self.attempts)
+        layout.addRow('Timeout:', self.timeout)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -59,6 +68,7 @@ class SettingsDialog(QDialog):
         return {
             'backend_url': self.backend_url.text().strip() or DEFAULT_BACKEND_URL,
             'attempts': self.attempts.value(),
+            'timeout': self.timeout.value(),
         }
 
 
